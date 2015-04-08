@@ -103,6 +103,8 @@ module AjaxDatatablesRails
     end
 
     def search_condition(column, value)
+      match = /pgp_sym_decrypt\(cast\((?<column>[^\s]+)/.match column
+      column = match[:column] if match
       model, column = column.split('.')
       model = model.singularize.titleize.gsub( / /, '' ).gsub(/\//, '::').constantize
 

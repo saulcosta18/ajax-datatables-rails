@@ -103,12 +103,20 @@ module AjaxDatatablesRails
     end
 
     def search_condition(column, value)
-      match = /pgp_sym_decrypt\(cast\((?<column>[^\s]+)/.match column
+      match = /pgp_sym_decrypt\(cast\((?<column>[^\s]+).+\),\s+['"](?<key>.+)['"]\)/.match column
       column = match[:column] if match
       model, column = column.split('.')
       model = model.singularize.titleize.gsub( / /, '' ).gsub(/\//, '::').constantize
 
-      casted_column = ::Arel::Nodes::NamedFunction.new('CAST', [model.arel_table[column.to_sym].as(typecast)])
+      if match
+        casted_column = ::Arel::Nodes::NamedFunction.new(
+          'CAST', [model.arel_table[column.to_sym].as('bytea')])
+        casted_column = ::Arel::Nodes::NamedFunction.new('pgp_sym_decrypt', [casted_column, match[:key]])
+      else
+        casted_column = ::Arel::Nodes::NamedFunction.new(
+            'CAST', [model.arel_table[column.to_sym].as(typecast)])
+      end
+
       casted_column.matches("%#{value}%")
     end
 
